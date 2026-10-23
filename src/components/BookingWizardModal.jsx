@@ -118,7 +118,7 @@ export default function BookingWizardModal({
     if (isSubmitting) return;
     if (!selectedFacility || !selectedService) return;
 
-    if (isSupabaseConfigured && !currentUser) {
+    if (!currentUser) {
       setErrorBanner(language === 'ta' 
         ? 'டோக்கன் பெற முதலில் உள்நுழையவும். தயவுசெய்து கணக்கில் உள்நுழையவும்.' 
         : 'Authentication Required: Please sign in or register to book your verified queue token.');

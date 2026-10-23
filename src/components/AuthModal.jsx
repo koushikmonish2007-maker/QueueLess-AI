@@ -11,10 +11,10 @@ import {
   Sparkles,
   ArrowRight
 } from 'lucide-react';
-import { useAuth, DEMO_USERS } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function AuthModal({ isOpen, onClose }) {
-  const { currentUser, isSupabaseConfigured, signIn, signUp, signOut, switchDemoRole } = useAuth();
+  const { currentUser, isSupabaseConfigured, signIn, signUp, signOut } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,23 +45,6 @@ export default function AuthModal({ isOpen, onClose }) {
       }, 700);
     } catch (err) {
       setErrorMessage(err.message || 'Authentication failed. Please verify credentials.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuickDemo = async (targetRole) => {
-    setErrorMessage('');
-    setSuccessMessage('');
-    setLoading(true);
-    try {
-      await switchDemoRole(targetRole);
-      setSuccessMessage(`Signed in as demo ${targetRole === 'facility_admin' ? 'Facility Administrator' : 'Citizen'}.`);
-      setTimeout(() => {
-        onClose();
-      }, 500);
-    } catch (err) {
-      setErrorMessage(err.message || 'Demo authentication failed.');
     } finally {
       setLoading(false);
     }
@@ -107,39 +90,6 @@ export default function AuthModal({ isOpen, onClose }) {
               </div>
               <h4 className="text-base font-bold text-white">{currentUser.fullName}</h4>
               <p className="text-xs text-slate-400 font-mono">{currentUser.email}</p>
-            </div>
-
-            {/* Quick Persona Switcher for Evaluation */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
-                Quick Role Switcher (Evaluation Testing)
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo('citizen')}
-                  className={`p-2.5 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer ${
-                    currentUser.role === 'citizen'
-                      ? 'bg-brand-blue text-white border-brand-cyan shadow-glow-sm'
-                      : 'bg-navy-950 text-slate-300 border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  <User className="w-4 h-4 mx-auto mb-1 text-brand-cyan" />
-                  <span>Citizen (Aditya)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo('facility_admin')}
-                  className={`p-2.5 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer ${
-                    currentUser.role === 'facility_admin'
-                      ? 'bg-brand-blue text-white border-brand-cyan shadow-glow-sm'
-                      : 'bg-navy-950 text-slate-300 border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  <Building2 className="w-4 h-4 mx-auto mb-1 text-amber-400" />
-                  <span>Admin (Dr. Mehta)</span>
-                </button>
-              </div>
             </div>
 
             <div className="pt-2 flex justify-end gap-2">
@@ -246,29 +196,6 @@ export default function AuthModal({ isOpen, onClose }) {
               className="w-full py-2.5 rounded-xl font-bold text-xs text-white bg-brand-blue hover:bg-brand-blue-light transition-all shadow-glow-sm cursor-pointer disabled:opacity-50"
             >
               {loading ? 'Processing...' : isRegister ? 'Register Account' : 'Sign In'}
-            </button>
-
-            {/* Quick Demo Logins */}
-            <div className="pt-2 border-t border-slate-800 text-center">
-              <span className="text-[11px] text-slate-400 block mb-2">Or instant evaluation 1-click test:</span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo('citizen')}
-                  className="flex-1 py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 transition-colors"
-                >
-                  Citizen Demo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo('facility_admin')}
-                  className="flex-1 py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 transition-colors"
-                >
-                  Admin Demo
-                </button>
-              </div>
-            </div>
-
             <div className="text-center pt-2">
               <button
                 type="button"

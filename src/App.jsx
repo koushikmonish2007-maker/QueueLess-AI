@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/LandingPage';
@@ -12,6 +12,19 @@ import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ProtectedRoute from './components/ProtectedRoute';
+
+/**
+ * Directs authenticated users to the appropriate dashboard:
+ * - Administrators (facility_admin, super_admin) -> /admin
+ * - Citizens -> LandingPage (citizen experience)
+ */
+function RootRouteHandler() {
+  const { currentUser } = useAuth();
+  if (currentUser?.role === 'facility_admin' || currentUser?.role === 'super_admin') {
+    return <Navigate to="/admin" replace />;
+  }
+  return <LandingPage />;
+}
 
 export default function App() {
   return (
@@ -25,7 +38,7 @@ export default function App() {
             <Route path="/register" element={<SignUpPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-            {/* Protected Private Routes */}
+            {/* Protected Private Routes - requires authenticated session */}
             <Route
               path="/"
               element={
@@ -34,14 +47,14 @@ export default function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<LandingPage />} />
+              <Route index element={<RootRouteHandler />} />
               <Route path="facilities" element={<FacilitiesPage />} />
               <Route path="citizen" element={<CitizenDashboard />} />
               <Route path="how-it-works" element={<HowItWorksPage />} />
               <Route
                 path="admin"
                 element={
-                  <ProtectedRoute requiredRole="facility_admin">
+                  <ProtectedRoute allowedRoles={['facility_admin', 'super_admin']}>
                     <AdminDashboard />
                   </ProtectedRoute>
                 }

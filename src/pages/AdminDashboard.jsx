@@ -33,7 +33,7 @@ import {
 import { MOCK_FACILITIES } from '../data/mockData';
 
 export default function AdminDashboard() {
-  const { currentUser, isSupabaseConfigured, switchDemoRole } = useAuth();
+  const { currentUser, isSupabaseConfigured } = useAuth();
   
   // Tab state for queue separation: 'waiting' | 'called' | 'serving' | 'history' | 'counters'
   const [activeQueueTab, setActiveQueueTab] = useState('waiting');

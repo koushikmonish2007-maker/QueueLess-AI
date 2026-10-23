@@ -62,15 +62,18 @@ export default function LandingPage() {
     return () => { isMounted = false; };
   }, []);
 
-  // 2. Fetch live active token
+  // 2. Fetch live active token for current authenticated user
   const refreshActiveToken = async () => {
+    if (!currentUser?.id) {
+      setActiveToken(null);
+      return;
+    }
     try {
-      const realToken = await getActiveUserToken(currentUser?.id);
-      setActiveToken(realToken);
+      const realToken = await getActiveUserToken(currentUser.id);
+      setActiveToken(realToken || null);
     } catch (err) {
       console.warn('[LandingPage] Active token fetch notice:', err.message);
-      const state = getCurrentState();
-      setActiveToken(state.tokens?.[0] || null);
+      setActiveToken(null);
     }
   };
 

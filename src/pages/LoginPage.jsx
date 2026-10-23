@@ -14,7 +14,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
-  const { currentUser, signIn, loading: authLoading } = useAuth();
+  const { currentUser, signIn, loading: authLoading, isSupabaseConfigured } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -25,15 +25,30 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
 
-  // Destination path after successful authentication
-  const destination = location.state?.from?.pathname || '/';
+  // Determine destination path based on role and location state
+  const resolveDestination = (user) => {
+    const fromPath = location.state?.from?.pathname;
+    const isAdmin = user?.role === 'facility_admin' || user?.role === 'super_admin';
+    const defaultDashboard = isAdmin ? '/admin' : '/citizen';
 
-  // If already authenticated, redirect straight to dashboard
+    if (!fromPath || fromPath === '/login' || fromPath === '/signup' || fromPath === '/register' || fromPath === '/') {
+      return defaultDashboard;
+    }
+
+    // Citizen attempting to access admin route should go to citizen dashboard instead
+    if (fromPath.startsWith('/admin') && !isAdmin) {
+      return '/citizen';
+    }
+
+    return fromPath + (location.state?.from?.search || '') + (location.state?.from?.hash || '');
+  };
+
+  // If already authenticated, redirect straight to appropriate dashboard
   useEffect(() => {
     if (currentUser && !authLoading) {
-      navigate(destination, { replace: true });
+      navigate(resolveDestination(currentUser), { replace: true });
     }
-  }, [currentUser, authLoading, navigate, destination]);
+  }, [currentUser, authLoading, navigate]);
 
   // Check URL query parameters for reset success notices
   useEffect(() => {
@@ -50,8 +65,9 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await signIn(email.trim(), password);
-      navigate(destination, { replace: true });
+      const data = await signIn(email.trim(), password);
+      const user = data?.user || currentUser;
+      navigate(resolveDestination(user), { replace: true });
     } catch (err) {
       let msg = err.message || 'Failed to authenticate. Please verify your credentials.';
       const lower = msg.toLowerCase();
@@ -65,6 +81,24 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-900 text-white p-4">
+        <div className="relative flex items-center justify-center mb-6">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 animate-pulse flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <Clock className="w-8 h-8 text-cyan-400 animate-spin-slow" />
+          </div>
+          <div className="absolute -inset-2 rounded-2xl border border-cyan-400/30 animate-ping opacity-40" />
+        </div>
+        <h3 className="text-lg font-bold tracking-wide text-white mb-2">QueueLess AI 2.0</h3>
+        <p className="text-xs text-slate-400 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+          Verifying security session...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full flex flex-col justify-center items-center bg-slate-50 px-4 sm:px-6 lg:px-8 py-10 font-sans selection:bg-cyan-500 selection:text-white relative">
@@ -108,6 +142,19 @@ export default function LoginPage() {
               Enter your email and password to access your dashboard.
             </p>
           </div>
+
+          {/* Missing Supabase Configuration Notice */}
+          {!isSupabaseConfigured && (
+            <div className="mb-5 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+              <div>
+                <strong className="block font-bold mb-0.5">Deployment Notice: Supabase Environment Not Configured</strong>
+                <p className="text-amber-800 leading-relaxed">
+                  Live authentication requires <code className="bg-amber-100 px-1 py-0.5 rounded text-[11px] font-mono">VITE_SUPABASE_URL</code> and <code className="bg-amber-100 px-1 py-0.5 rounded text-[11px] font-mono">VITE_SUPABASE_ANON_KEY</code>. Please set them in your deployment platform settings (e.g. Vercel / Netlify environment variables).
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Error Banner */}
           {errorMessage && (

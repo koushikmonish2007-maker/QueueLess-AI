@@ -44,18 +44,17 @@ export default function CitizenDashboard() {
 
   // Refresh active user token
   const refreshLiveToken = async () => {
+    if (!currentUser?.id) {
+      setTokens([]);
+      setLoading(false);
+      return;
+    }
     try {
-      const liveToken = await getActiveUserToken(currentUser?.id);
-      if (liveToken) {
-        setTokens([liveToken]);
-      } else {
-        const state = getCurrentState();
-        setTokens(state.tokens || []);
-      }
+      const liveToken = await getActiveUserToken(currentUser.id);
+      setTokens(liveToken ? [liveToken] : []);
     } catch (err) {
       console.warn('[CitizenDashboard] Live token check notice:', err.message);
-      const state = getCurrentState();
-      setTokens(state.tokens || []);
+      setTokens([]);
     } finally {
       setLoading(false);
     }
