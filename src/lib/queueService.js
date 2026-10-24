@@ -31,6 +31,26 @@ let localNotifications = [
   }
 ];
 
+// Local facility claims for interactive offline/demo verification
+let localFacilityClaims = [
+  {
+    id: 'claim-pilot-001',
+    facilityId: 'fac-rto-001',
+    facilityName: 'Regional Transport Office (RTO) — Chennai South (TN-07)',
+    claimantId: '00000000-0000-0000-0000-cit000000001',
+    claimantName: 'Aditya Sharma',
+    officialEmail: 'rto.chennaisouth@tn.gov.in',
+    officialPhone: '+91 (044) 2441-2850',
+    designation: 'Assistant Regional Transport Officer',
+    governmentIdType: 'Government Employee Service Card',
+    idProofUrl: 'https://parivahan.gov.in/staff-verification',
+    authorizationLetterUrl: '',
+    additionalNotes: 'Requesting administrative privileges to initialize physical counter dispatch for LLR and driving tests.',
+    status: 'pending',
+    createdAt: new Date(Date.now() - 3600000 * 4).toISOString()
+  }
+];
+
 const globalEmitter = typeof window !== 'undefined' 
   ? window 
   : (typeof globalThis !== 'undefined' ? (globalThis.__queueless_emitter = globalThis.__queueless_emitter || new EventTarget()) : null);
@@ -38,7 +58,7 @@ const globalEmitter = typeof window !== 'undefined'
 function notifyLocalSubscribers() {
   if (globalEmitter && typeof globalEmitter.dispatchEvent === 'function') {
     globalEmitter.dispatchEvent(new CustomEvent('queueless_state_update', {
-      detail: { tokens: localTokens, queue: localAdminQueue, counters: localCounters }
+      detail: { tokens: localTokens, queue: localAdminQueue, counters: localCounters, claims: localFacilityClaims }
     }));
   }
 }
@@ -56,6 +76,14 @@ export async function getLiveFacilities() {
           id,
           name,
           category,
+          category_id,
+          subcategory,
+          state_code,
+          state,
+          district,
+          city,
+          taluk,
+          pincode,
           location,
           address,
           rating,
@@ -64,6 +92,14 @@ export async function getLiveFacilities() {
           image_url,
           description,
           is_active,
+          onboarding_status,
+          is_booking_enabled,
+          source_name,
+          source_url,
+          source_license,
+          official_portal_url,
+          last_synced_at,
+          verification_notes,
           services (
             id,
             facility_id,
@@ -87,19 +123,38 @@ export async function getLiveFacilities() {
       if (!error && data && data.length > 0) {
         return data.map(f => {
           const mockMatch = MOCK_FACILITIES.find(m => m.id === f.id || m.name.toLowerCase() === f.name.toLowerCase());
+          const isBookingEnabled = typeof f.is_booking_enabled === 'boolean' 
+            ? f.is_booking_enabled 
+            : (mockMatch?.isBookingEnabled ?? (f.onboarding_status === 'booking_enabled'));
+
           return {
             id: f.id,
             name: f.name,
             category: f.category,
-            district: mockMatch?.district || (f.location.includes(',') ? f.location.split(',')[1].trim() : 'Chennai'),
-            location: f.location,
+            categoryId: f.category_id || mockMatch?.categoryId || 'govt_hospitals',
+            subcategory: f.subcategory || mockMatch?.subcategory || '',
+            stateCode: f.state_code || mockMatch?.stateCode || 'TN',
+            state: f.state || mockMatch?.state || 'Tamil Nadu',
+            district: f.district || mockMatch?.district || (f.location.includes(',') ? f.location.split(',')[1].trim() : 'Chennai'),
+            city: f.city || mockMatch?.city || 'Chennai',
+            taluk: f.taluk || mockMatch?.taluk || '',
+            pincode: f.pincode || mockMatch?.pincode || '',
+            location: f.location || `${f.district || 'Chennai'}, ${f.state || 'Tamil Nadu'}`,
             address: f.address,
             rating: Number(f.rating) || 4.8,
-            activeQueues: mockMatch?.activeQueues || 20,
+            activeQueues: isBookingEnabled ? (mockMatch?.activeQueues || 20) : 0,
             operatingHours: f.operating_hours,
             phone: f.phone,
             imageUrl: f.image_url || mockMatch?.imageUrl,
             description: f.description,
+            onboardingStatus: f.onboarding_status || mockMatch?.onboardingStatus || 'booking_enabled',
+            isBookingEnabled,
+            sourceName: f.source_name || mockMatch?.sourceName || 'National Public Registry',
+            sourceUrl: f.source_url || mockMatch?.sourceUrl || '',
+            sourceLicense: f.source_license || mockMatch?.sourceLicense || 'Government Open Data License - India (GODL)',
+            officialPortalUrl: f.official_portal_url || mockMatch?.officialPortalUrl || '',
+            lastSyncedAt: f.last_synced_at || mockMatch?.lastSyncedAt || new Date().toISOString(),
+            verificationNotes: f.verification_notes || mockMatch?.verificationNotes || '',
             services: (f.services || [])
               .filter(s => s.is_active !== false)
               .map(s => ({
@@ -236,6 +291,12 @@ export async function bookVirtualToken({
     const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
     if (sessionErr || !session || !session.user) {
       throw new Error('Unauthenticated: You must be signed in to book a virtual queue token in Supabase. Please sign in or register.');
+    }
+
+    // Verify facility onboarding & booking status client-side prior to RPC call
+    const targetFac = MOCK_FACILITIES.find(m => m.id === facilityId);
+    if (targetFac && (!targetFac.isBookingEnabled || targetFac.onboardingStatus !== 'booking_enabled')) {
+      throw new Error('BookingNotEnabled: Virtual queuing is only available for officially partnered facilities with verified queue management. This facility is currently an informational directory listing.');
     }
 
     // 2. Invoke the official book_queue_token PostgreSQL RPC
@@ -873,4 +934,201 @@ export async function markNotificationAsRead(notificationId) {
   notifyLocalSubscribers();
   return { success: true };
 }
+
+/**
+ * 10. Facility Claim Management (Secure Admin Elevation Workflow)
+ * Zero client-side role self-granting: Super admin approval strictly required.
+ */
+
+/**
+ * Submit an official administrative claim for a facility
+ */
+export async function submitFacilityClaim({
+  facilityId,
+  facilityName,
+  claimantName,
+  officialEmail,
+  officialPhone,
+  designation,
+  governmentIdType,
+  idProofUrl = '',
+  authorizationLetterUrl = '',
+  additionalNotes = ''
+}) {
+  if (!facilityId || !officialEmail || !officialPhone || !designation) {
+    throw new Error('InvalidInput: Facility ID, official email, phone, and designation are required.');
+  }
+
+  // 1. Supabase Cloud submission if configured & user is authenticated
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error('Unauthenticated: You must be signed in to submit an institutional claim.');
+      }
+
+      const { data, error } = await supabase
+        .from('facility_claims')
+        .insert({
+          facility_id: facilityId,
+          claimant_id: session.user.id,
+          claimant_name: claimantName || session.user.user_metadata?.full_name || 'Staff Representative',
+          official_email: officialEmail.trim(),
+          official_phone: officialPhone.trim(),
+          designation: designation.trim(),
+          government_id_type: governmentIdType || 'Employee ID Card',
+          id_proof_url: idProofUrl,
+          authorization_letter_url: authorizationLetterUrl,
+          additional_notes: additionalNotes,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message || 'Database submission failed.');
+      }
+
+      return data;
+    } catch (err) {
+      console.warn('[QueueService] Supabase claim insert notice:', err.message);
+      // If error is authentication or constraint, propagate it
+      if (err.message.includes('Unauthenticated') || err.message.includes('Unique')) {
+        throw err;
+      }
+    }
+  }
+
+  // 2. Interactive local state store fallback
+  const newClaim = {
+    id: `claim-${Date.now()}`,
+    facilityId,
+    facilityName: facilityName || 'Claimed Facility',
+    claimantId: '00000000-0000-0000-0000-cit000000001',
+    claimantName: claimantName || 'Staff Representative',
+    officialEmail: officialEmail.trim(),
+    officialPhone: officialPhone.trim(),
+    designation: designation.trim(),
+    governmentIdType: governmentIdType || 'Institutional Service Card',
+    idProofUrl: idProofUrl || 'Verified in official directory',
+    authorizationLetterUrl: authorizationLetterUrl || '',
+    additionalNotes: additionalNotes || '',
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+
+  localFacilityClaims = [newClaim, ...localFacilityClaims];
+  notifyLocalSubscribers();
+  return newClaim;
+}
+
+/**
+ * Fetch all facility claims (Super Admin view or Claimant view)
+ */
+export async function getFacilityClaims(claimantId = null) {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      let query = supabase
+        .from('facility_claims')
+        .select(`
+          id,
+          facility_id,
+          claimant_id,
+          claimant_name,
+          official_email,
+          official_phone,
+          designation,
+          government_id_type,
+          id_proof_url,
+          authorization_letter_url,
+          additional_notes,
+          status,
+          reviewed_by,
+          reviewed_at,
+          review_notes,
+          created_at,
+          facilities:facility_id (
+            name,
+            category,
+            state,
+            district,
+            city,
+            address
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (claimantId) {
+        query = query.eq('claimant_id', claimantId);
+      }
+
+      const { data, error } = await query;
+      if (!error && data) {
+        return data.map(c => ({
+          ...c,
+          facilityName: c.facilities?.name || 'Facility'
+        }));
+      }
+    } catch (err) {
+      console.warn('[QueueService] Supabase claims fetch notice:', err.message);
+    }
+  }
+
+  if (claimantId) {
+    return localFacilityClaims.filter(c => c.claimantId === claimantId);
+  }
+  return localFacilityClaims;
+}
+
+/**
+ * Approve a facility claim (Strictly Super Admin only)
+ * Elevates claimant to facility_admin and partners facility
+ */
+export async function approveFacilityClaim(claimId, adminNotes = 'Approved following institutional credential verification.') {
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase.rpc('approve_facility_claim', {
+      p_claim_id: claimId,
+      p_admin_notes: adminNotes
+    });
+    if (error) {
+      throw new Error(error.message || 'Failed to approve facility claim in database.');
+    }
+    return data;
+  }
+
+  // Local fallback
+  localFacilityClaims = localFacilityClaims.map(c => 
+    c.id === claimId 
+      ? { ...c, status: 'approved', reviewedAt: new Date().toISOString(), reviewNotes: adminNotes } 
+      : c
+  );
+  notifyLocalSubscribers();
+  return { success: true, claimId, status: 'approved' };
+}
+
+/**
+ * Reject a facility claim with documented reason (Super Admin only)
+ */
+export async function rejectFacilityClaim(claimId, reason = 'Verification documentation could not be authenticated.') {
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase.rpc('reject_facility_claim', {
+      p_claim_id: claimId,
+      p_reason: reason
+    });
+    if (error) {
+      throw new Error(error.message || 'Failed to reject claim in database.');
+    }
+    return data;
+  }
+
+  // Local fallback
+  localFacilityClaims = localFacilityClaims.map(c => 
+    c.id === claimId 
+      ? { ...c, status: 'rejected', reviewedAt: new Date().toISOString(), reviewNotes: reason } 
+      : c
+  );
+  notifyLocalSubscribers();
+  return { success: true, claimId, status: 'rejected' };
+}
+
 

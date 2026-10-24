@@ -22,10 +22,61 @@ export const TRANSLATIONS = {
 
     // Hero Header
     heading: 'Skip the Queue. Save Your Time.',
-    subtitle: 'Smart Virtual Queue Management for Tamil Nadu',
-    searchPlaceholder: 'Search by district, facility, or service',
+    subtitle: 'Smart Virtual Queue Management Across India',
+    searchPlaceholder: 'Search by center name, pin code, or service (e.g. OPD, Aadhaar, PSK)...',
     allDistricts: 'All Districts',
     allCategories: 'All Categories',
+
+    // Nationwide Directory Hierarchy
+    nationwideTitle: 'All-India Facility Directory',
+    nationwideSubtitle: 'Official directory of hospitals, banks, RTOs, passport offices, and citizen centers across 36 Indian States & UTs.',
+    stateLabel: 'State / Union Territory',
+    districtLabel: 'District',
+    cityLabel: 'City / Locality',
+    allStates: 'All 36 States & UTs',
+    selectState: 'Select State / UT',
+    selectDistrict: 'Select District',
+    selectCity: 'Select City / Locality',
+    stateFilterChip: 'States & UTs',
+    filterByStatus: 'Filter by Status',
+    statusAll: 'All Facilities',
+    statusBookingOnly: '⚡ Online Token Available',
+    statusVerifiedOnly: '✓ Verified Institutional Directory',
+    statusListedOnly: '🏛️ Public Registry (Walk-in)',
+
+    // Categories
+    cat_govt_hospitals: 'Government Hospitals',
+    cat_private_hospitals: 'Private Hospitals',
+    cat_phcs: 'Primary Health Centres (PHC)',
+    cat_clinics: 'Clinics & Dispensaries',
+    cat_bank_branches: 'Bank Branches',
+    cat_rtos: 'Regional Transport Offices (RTO)',
+    cat_passport_centres: 'Passport Seva Kendras',
+    cat_municipal_offices: 'Municipal Offices',
+    cat_revenue_offices: 'Revenue & Taluk Offices',
+    cat_citizen_service_centres: 'Citizen Service Centres',
+
+    // Status Badges
+    badgeBookingEnabled: 'Booking Enabled',
+    badgeBookingEnabledDesc: 'Live virtual queue active with online token booking.',
+    badgePartnered: 'Partnered',
+    badgePartneredDesc: 'Official administrative partner; digital queue onboarding underway.',
+    badgeVerified: 'Verified Directory',
+    badgeVerifiedDesc: 'Verified institutional listing from official registries. Walk-in service only.',
+    badgeListed: 'Public Registry',
+    badgeListedDesc: 'Government/public open directory entry. Walk-in queue only.',
+
+    // Walk-in & Informational notices
+    walkInOnlyTitle: 'Walk-in Services Only',
+    walkInNotice: 'Virtual queue token booking is currently reserved for verified partnered centers. For this facility, please visit in person during operational hours with the listed documents. Tokens are issued physically at the reception counter.',
+    viewDetailsWalkIn: 'View Walk-in Info',
+    claimThisFacility: 'Claim Facility',
+    claimFacilityPrompt: 'Are you an official representative of this hospital, bank, or government office?',
+    claimFacilityCTA: 'Claim this facility to enable digital queues',
+    provenanceLabel: 'Data Provenance',
+    sourceLicenseLabel: 'License',
+    lastVerifiedLabel: 'Last Audited',
+    officialWebsite: 'Official Portal',
 
     // Stats Cards
     myActiveToken: 'My Active Token',
@@ -54,19 +105,25 @@ export const TRANSLATIONS = {
     stayPut: 'Stay Put — We will alert you',
     cancelToken: 'Cancel Token',
     noActiveQueueTitle: 'No Active Queue Found',
-    noActiveQueueDesc: 'You do not have any active virtual queue positions right now. Browse participating Tamil Nadu facilities below to book a token.',
+    noActiveQueueDesc: 'You do not have any active virtual queue positions right now. Browse participating facilities across India below to book a token.',
     browseToJoin: 'Browse Facilities to Join Queue',
 
     // Browse Facilities
     browseFacilities: 'Browse & Book Facilities',
-    browseFacilitiesSubtitle: 'Select a center in Tamil Nadu to book an appointment token',
+    browseFacilitiesSubtitle: 'Select a center across India to book an appointment token or view walk-in timings',
     activeQueues: 'Active Queues',
     activeCounters: 'Counters Active',
     avgWait: 'Avg Wait',
     bookTokenBtn: 'Book Token',
     viewServices: 'View Services',
     showingFacilities: 'Showing',
-    ofFacilities: 'facilities in Tamil Nadu',
+    ofFacilities: 'facilities found across India',
+
+    // Pagination
+    pageLabel: 'Page',
+    ofPageLabel: 'of',
+    prevPage: 'Previous',
+    nextPage: 'Next',
 
     // Analytics
     queueActivity: 'Queue Activity Analytics',
@@ -78,8 +135,8 @@ export const TRANSLATIONS = {
     avgWaitMins: 'Average Wait (Minutes)',
 
     // Queue Map
-    queueMapTitle: 'Tamil Nadu Virtual Queue Map',
-    queueMapSubtitle: 'District-wise operational density and active public service centers',
+    queueMapTitle: 'Nationwide Virtual Queue Map',
+    queueMapSubtitle: 'State and district operational density and active public service centers',
     centerCount: 'Centers Active',
 
     // Settings & Help
@@ -87,7 +144,7 @@ export const TRANSLATIONS = {
     travelBufferLabel: 'Travel Time Buffer (Minutes)',
     notificationsPref: 'Notification Alerts',
     helpTitle: 'How Virtual Queuing Works',
-    helpSubtitle: 'Fast, dignified, and predictable public services',
+    helpSubtitle: 'Fast, dignified, and predictable public services across India',
 
     // Senior-Friendly Redesign Keys
     welcomeHeader: 'Welcome to QueueLess!',
@@ -140,6 +197,7 @@ export const TRANSLATIONS = {
     closeBtn: 'Close',
     seniorAssistanceBadge: 'Senior Citizen Priority'
   },
+
   ta: {
     // Navigation
     dashboard: 'முகப்புப்பலகை',
@@ -159,10 +217,61 @@ export const TRANSLATIONS = {
 
     // Hero Header
     heading: 'வரிசையைத் தவிருங்கள். உங்கள் நேரத்தைச் சேமியுங்கள்.',
-    subtitle: 'தமிழ்நாட்டிற்கான நவீன மெய்நிகர் வரிசை மேலாண்மை',
-    searchPlaceholder: 'மாவட்டம், மையம் அல்லது சேவையைத் தேடுங்கள்',
+    subtitle: 'இந்தியா முழுவதற்குமான நவீன மெய்நிகர் வரிசை மேலாண்மை',
+    searchPlaceholder: 'மையத்தின் பெயர், அஞ்சல் குறியீடு அல்லது சேவையைத் தேடுங்கள்...',
     allDistricts: 'அனைத்து மாவட்டங்கள்',
     allCategories: 'அனைத்துப் பிரிவுகள்',
+
+    // Nationwide Directory Hierarchy
+    nationwideTitle: 'அனைத்திந்திய மையங்கள் விவரக் கையேடு',
+    nationwideSubtitle: '36 இந்திய மாநிலங்கள் & யூனியன் பிரதேசங்களின் மருத்துவமனைகள், வங்கிகள், RTO மற்றும் அரசு மையங்கள்.',
+    stateLabel: 'மாநிலம் / யூனியன் பிரதேசம்',
+    districtLabel: 'மாவட்டம்',
+    cityLabel: 'நகரம் / பகுதி',
+    allStates: 'அனைத்து 36 மாநிலங்கள் & யூ.பி',
+    selectState: 'மாநிலத்தைத் தேர்வு செய்க',
+    selectDistrict: 'மாவட்டத்தைத் தேர்வு செய்க',
+    selectCity: 'நகரத்தைத் தேர்வு செய்க',
+    stateFilterChip: 'மாநிலங்கள் & யூ.பி',
+    filterByStatus: 'நிலையின்படி வடிகட்டுதல்',
+    statusAll: 'அனைத்து மையங்கள்',
+    statusBookingOnly: '⚡ ஆன்லைன் டோக்கன் உண்டு',
+    statusVerifiedOnly: '✓ சரிபார்க்கப்பட்ட தகவல் கையேடு',
+    statusListedOnly: '🏛️ பொதுப் பட்டியல் (நேரடி வருகை)',
+
+    // Categories
+    cat_govt_hospitals: 'அரசு மருத்துவமனைகள்',
+    cat_private_hospitals: 'தனியார் மருத்துவமனைகள்',
+    cat_phcs: 'ஆரம்ப சுகாதார நிலையங்கள் (PHC)',
+    cat_clinics: 'கிளினிக்குகள் & மருந்தகங்கள்',
+    cat_bank_branches: 'வங்கி கிளைகள்',
+    cat_rtos: 'வட்டாரப் போக்குவரத்து அலுவலகங்கள் (RTO)',
+    cat_passport_centres: 'பாஸ்போர்ட் சேவை மையங்கள்',
+    cat_municipal_offices: 'நகராட்சி அலுவலகங்கள்',
+    cat_revenue_offices: 'வருவாய் & தாலுகா அலுவலகங்கள்',
+    cat_citizen_service_centres: 'மக்கள் சேவை மையங்கள்',
+
+    // Status Badges
+    badgeBookingEnabled: 'டோக்கன் பதிவு உண்டு',
+    badgeBookingEnabledDesc: 'செயலில் உள்ள மெய்நிகர் வரிசை; ஆன்லைன் டோக்கன் வசதி உண்டு.',
+    badgePartnered: 'கூட்டாண்மை மையம்',
+    badgePartneredDesc: 'அதிகாரப்பூர்வ கூட்டாண்மை மையம்; வரிசை இணைக்கும் பணி நடைபெறுகிறது.',
+    badgeVerified: 'சரிபார்க்கப்பட்ட தகவல்',
+    badgeVerifiedDesc: 'அதிகாரப்பூர்வ ஆவணங்களால் சரிபார்க்கப்பட்டது. நேரடி வருகை சேவை மட்டுமே.',
+    badgeListed: 'பொதுப் பட்டியல்',
+    badgeListedDesc: 'அரசுப் பொதுத் தகவல்களிலிருந்து பெறப்பட்டது. நேரடி வருகை மட்டுமே.',
+
+    // Walk-in & Informational notices
+    walkInOnlyTitle: 'நேரடி வருகை சேவைகள் மட்டுமே',
+    walkInNotice: 'மெய்நிகர் டோக்கன் பதிவு தற்போது அதிகாரப்பூர்வ கூட்டாண்மை மையங்களுக்கு மட்டுமே செயல்படும். இம்மையத்திற்கு வேலை நேரத்தில் தேவையான ஆவணங்களுடன் நேரில் சென்று வரவேற்பறையில் டோக்கன் பெறலாம்.',
+    viewDetailsWalkIn: 'நேரடி வருகை விவரங்கள்',
+    claimThisFacility: 'மையத்தை உரிமை கோருக',
+    claimFacilityPrompt: 'நீங்கள் இந்த அரசு அலுவலகம், மருத்துவமனை அல்லது வங்கியின் அதிகாரப்பூர்வ நிர்வாகியா?',
+    claimFacilityCTA: 'டிஜிட்டல் டோக்கன்களை இயக்க உரிமை கோருங்கள்',
+    provenanceLabel: 'அதிகாரப்பூர்வ தகவல் மூலம்',
+    sourceLicenseLabel: 'உரிமம்',
+    lastVerifiedLabel: 'சரிபார்க்கப்பட்ட தேதி',
+    officialWebsite: 'அதிகாரப்பூர்வ தளம்',
 
     // Stats Cards
     myActiveToken: 'எனது டோக்கன்',
@@ -196,14 +305,20 @@ export const TRANSLATIONS = {
 
     // Browse Facilities
     browseFacilities: 'மையங்களைத் தேர்வுசெய்து டோக்கன் பெறுக',
-    browseFacilitiesSubtitle: 'தமிழ்நாட்டின் மருத்துவமனைகள், அரசு சேவை மற்றும் வங்கிகளில் முன்பதிவு செய்யுங்கள்',
+    browseFacilitiesSubtitle: 'இந்தியாவின் மருத்துவமனைகள், அரசு சேவை மற்றும் வங்கிகளில் முன்பதிவு செய்யுங்கள்',
     activeQueues: 'வரிசையில் உள்ளோர்',
     activeCounters: 'செயலில் உள்ள கவுண்டர்கள்',
     avgWait: 'சராசரி நேரம்',
     bookTokenBtn: 'டோக்கன் பெறுக',
     viewServices: 'சேவைகளைக் காண்க',
     showingFacilities: 'காட்டப்படும் மையங்கள்',
-    ofFacilities: 'தமிழ்நாடு மையங்கள்',
+    ofFacilities: 'இந்திய மையங்கள்',
+
+    // Pagination
+    pageLabel: 'பக்கம்',
+    ofPageLabel: 'இல்',
+    prevPage: 'முந்தையது',
+    nextPage: 'அடுத்தது',
 
     // Analytics
     queueActivity: 'வரிசைச் சுழற்சி பகுப்பாய்வு',
@@ -215,8 +330,8 @@ export const TRANSLATIONS = {
     avgWaitMins: 'சராசரி காத்திருப்பு (நிமிடங்கள்)',
 
     // Queue Map
-    queueMapTitle: 'தமிழ்நாடு மெய்நிகர் வரிசை வரைபடம்',
-    queueMapSubtitle: 'மாவட்ட வாரியாக மையங்களின் வரிசை அடர்த்தி நிலவரம்',
+    queueMapTitle: 'அனைத்திந்திய மெய்நிகர் வரிசை வரைபடம்',
+    queueMapSubtitle: 'மாநில வாரியாக மையங்களின் வரிசை அடர்த்தி நிலவரம்',
     centerCount: 'செயலில் உள்ள மையங்கள்',
 
     // Settings & Help

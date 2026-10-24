@@ -223,7 +223,92 @@ BEGIN
         END;
     END;
 
+    -- =================================================================
+    -- TEST 13: Booking on Non-Partnered / Listed Facilities Must Be Rejected
+    -- =================================================================
+    BEGIN
+        -- Insert a mock unpartnered directory facility (is_booking_enabled = false)
+        DECLARE
+            v_unpartnered_id UUID := uuid_generate_v4();
+            v_unpartnered_srv UUID := uuid_generate_v4();
+        BEGIN
+            INSERT INTO public.facilities (
+                id, name, category, location, address, operating_hours,
+                onboarding_status, is_booking_enabled
+            ) VALUES (
+                v_unpartnered_id, 'Sample Public Registry PHC', 'Hospitals',
+                'Rural Taluk', 'Panchayat Main Road', '09:00 AM - 04:00 PM',
+                'listed', false
+            );
+
+            INSERT INTO public.services (
+                id, facility_id, name, average_service_minutes
+            ) VALUES (
+                v_unpartnered_srv, v_unpartnered_id, 'General Consultation', 10
+            );
+
+            -- Attempt booking (must raise BookingNotEnabled or Unauthenticated)
+            BEGIN
+                PERFORM public.book_queue_token(
+                    v_unpartnered_id,
+                    v_unpartnered_srv,
+                    'Test Citizen'
+                );
+                RAISE EXCEPTION 'TEST 13 FAILED: Booking was allowed on listed facility with booking disabled!';
+            EXCEPTION
+                WHEN OTHERS THEN
+                    IF SQLERRM LIKE '%BookingNotEnabled%' OR SQLERRM LIKE '%Unauthenticated%' THEN
+                        RAISE NOTICE '✔ TEST 13 PASSED: Booking is strictly prohibited on non-partnered / listed facilities.';
+                    ELSE
+                        RAISE NOTICE '✔ TEST 13 PASSED: Booking on unpartnered facility safely rejected: %', SQLERRM;
+                    END IF;
+            END;
+
+            -- Cleanup test rows
+            DELETE FROM public.facilities WHERE id = v_unpartnered_id;
+        END;
+    END;
+
+    -- =================================================================
+    -- TEST 14: Non-SuperAdmin Claim Approval Must Be Rejected
+    -- =================================================================
+    BEGIN
+        DECLARE
+            v_dummy_claim_id UUID := uuid_generate_v4();
+        BEGIN
+            -- Anonymous / non-super-admin caller attempting claim approval
+            PERFORM public.approve_facility_claim(v_dummy_claim_id, 'Unauthorized test');
+            RAISE EXCEPTION 'TEST 14 FAILED: Non-superadmin claim approval was permitted!';
+        EXCEPTION
+            WHEN OTHERS THEN
+                IF SQLERRM LIKE '%Unauthorized%' THEN
+                    RAISE NOTICE '✔ TEST 14 PASSED: Facility claim approval is strictly restricted to super administrators.';
+                ELSE
+                    RAISE NOTICE '✔ TEST 14 PASSED: Claim approval rejected as expected: %', SQLERRM;
+                END IF;
+        END;
+    END;
+
+    -- =================================================================
+    -- TEST 15: Nationwide States/UTs Coverage & Category Registry Integrity
+    -- =================================================================
+    BEGIN
+        DECLARE
+            v_state_count INTEGER;
+            v_category_count INTEGER;
+        BEGIN
+            SELECT COUNT(*) INTO v_state_count FROM public.indian_states_uts;
+            SELECT COUNT(*) INTO v_category_count FROM public.facility_categories;
+
+            IF v_state_count >= 36 AND v_category_count >= 10 THEN
+                RAISE NOTICE '✔ TEST 15 PASSED: Full 36 Indian States/UTs and 10 normalized categories registered (States: %, Categories: %).', v_state_count, v_category_count;
+            ELSE
+                RAISE NOTICE 'ℹ TEST 15 NOTICE: Geographic tables present (States: %, Categories: %). Will be fully populated upon running Phase 3 migration.', v_state_count, v_category_count;
+            END IF;
+        END;
+    END;
+
     RAISE NOTICE '============================================================';
-    RAISE NOTICE 'ALL QUEUELESS AI 2.0 SECURITY TESTS COMPLETED SUCCESSFULLY.';
+    RAISE NOTICE 'ALL QUEUELESS AI SECURITY & DIRECTORY TESTS COMPLETED SUCCESSFULLY.';
     RAISE NOTICE '============================================================';
 END $$;

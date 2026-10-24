@@ -1,23 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Building2, 
-  Users, 
-  Clock, 
   CheckCircle2, 
   AlertCircle, 
   PhoneCall, 
   Play, 
   Check, 
   Pause, 
-  Ban, 
   RefreshCw, 
   ShieldCheck, 
-  Lock, 
-  ChevronRight,
-  User,
-  Sparkles,
-  BarChart3,
-  Calendar
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -28,18 +19,26 @@ import {
   adminCompleteService, 
   adminCancelToken, 
   adminUpdateCounterStatus, 
-  subscribeToQueueChanges 
+  subscribeToQueueChanges,
+  getFacilityClaims,
+  approveFacilityClaim,
+  rejectFacilityClaim
 } from '../lib/queueService';
 import { MOCK_FACILITIES } from '../data/mockData';
 
 export default function AdminDashboard() {
   const { currentUser, isSupabaseConfigured } = useAuth();
   
-  // Tab state for queue separation: 'waiting' | 'called' | 'serving' | 'history' | 'counters'
+  // Tab state: 'waiting' | 'called' | 'serving' | 'history' | 'claims'
   const [activeQueueTab, setActiveQueueTab] = useState('waiting');
   const [facilities, setFacilities] = useState(MOCK_FACILITIES);
   const [selectedFacilityId, setSelectedFacilityId] = useState('');
   const [queueState, setQueueState] = useState({ queue: [], counters: [] });
+  
+  // Claims state for Super Admin & Facility Admins
+  const [facilityClaims, setFacilityClaims] = useState([]);
+  const [claimsFilter, setClaimsFilter] = useState('all');
+  const [claimActionLoading, setClaimActionLoading] = useState(false);
   
   // Feedback messages
   const [actionSuccessMessage, setActionSuccessMessage] = useState('');
@@ -135,8 +134,22 @@ export default function AdminDashboard() {
   const inServiceTokens = queueState.queue.filter(q => q.status === 'in_service' || q.status === 'in_progress');
   const completedTokens = queueState.queue.filter(q => q.status === 'completed');
   
-  const activeCounters = queueState.counters.filter(c => c.status === 'active' || c.status === 'busy');
+  const _activeCounters = queueState.counters.filter(c => c.status === 'active' || c.status === 'busy');
   const firstActiveCounter = queueState.counters.find(c => c.status === 'active');
+
+  // Load facility claims
+  const loadClaims = async () => {
+    try {
+      const claims = await getFacilityClaims(isSuperAdmin ? null : currentUser?.id);
+      setFacilityClaims(claims || []);
+    } catch (err) {
+      console.warn('[AdminDashboard] Claims load notice:', err.message);
+    }
+  };
+
+  useEffect(() => {
+    loadClaims();
+  }, [currentUser?.id, isSuperAdmin]);
 
   const triggerToast = (msg, isErr = false) => {
     if (isErr) {
@@ -145,6 +158,42 @@ export default function AdminDashboard() {
     } else {
       setActionSuccessMessage(msg);
       setTimeout(() => setActionSuccessMessage(''), 3500);
+    }
+  };
+
+  const handleApproveClaim = async (claimId) => {
+    if (!isSuperAdmin) {
+      triggerToast('Strict Security Policy: Only super administrators can approve institutional claims.', true);
+      return;
+    }
+    setClaimActionLoading(true);
+    try {
+      await approveFacilityClaim(claimId, 'Institutional credentials authenticated by super administrator.');
+      await loadClaims();
+      triggerToast('Facility claim approved! Administrator privileges granted to claimant.');
+    } catch (err) {
+      triggerToast(err.message, true);
+    } finally {
+      setClaimActionLoading(false);
+    }
+  };
+
+  const handleRejectClaim = async (claimId) => {
+    if (!isSuperAdmin) {
+      triggerToast('Only super administrators can reject institutional claims.', true);
+      return;
+    }
+    const reason = window.prompt('Please enter the reason for rejecting this claim:', 'Official credentials could not be authenticated against institutional records.');
+    if (!reason) return;
+    setClaimActionLoading(true);
+    try {
+      await rejectFacilityClaim(claimId, reason);
+      await loadClaims();
+      triggerToast('Facility claim rejected.');
+    } catch (err) {
+      triggerToast(err.message, true);
+    } finally {
+      setClaimActionLoading(false);
     }
   };
 
@@ -553,6 +602,24 @@ export default function AdminDashboard() {
                 {completedTokens.length}
               </span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveQueueTab('claims')}
+              className={`px-5 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+                activeQueueTab === 'claims'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/25'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-purple-300" />
+              <span>5. Facility Claims Review</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-black ${
+                activeQueueTab === 'claims' ? 'bg-purple-700 text-white' : 'bg-purple-100 text-purple-800'
+              }`}>
+                {facilityClaims.filter(c => c.status === 'pending').length}
+              </span>
+            </button>
           </div>
 
           {/* TAB 1: WAITING TOKENS */}
@@ -734,6 +801,154 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB 5: FACILITY CLAIMS REVIEW (SUPER ADMIN WORKFLOW) */}
+          {activeQueueTab === 'claims' && (
+            <div className="space-y-6 animate-fadeIn">
+              
+              {/* Claims Security Notice */}
+              <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 flex items-start gap-3 text-sm text-purple-950">
+                <ShieldCheck className="w-5 h-5 text-purple-700 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-bold">Secure Administrative Approval Process</strong>
+                  <p className="text-xs text-purple-900 mt-0.5">
+                    Authorized hospital, bank, or government representatives submit claims to manage queues. Super administrators review department email domains and employee proofs before granting the <code>facility_admin</code> role. Self-escalation is strictly prevented by database triggers.
+                  </p>
+                </div>
+              </div>
+
+              {/* Claims Filter Bar */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  {['all', 'pending', 'approved', 'rejected'].map(st => (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => setClaimsFilter(st)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer ${
+                        claimsFilter === st
+                          ? 'bg-purple-700 text-white shadow-xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {st} ({st === 'all' ? facilityClaims.length : facilityClaims.filter(c => c.status === st).length})
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={loadClaims}
+                  className="text-xs font-bold text-purple-700 hover:underline flex items-center gap-1"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Refresh Claims</span>
+                </button>
+              </div>
+
+              {/* Claims List */}
+              {facilityClaims.filter(c => claimsFilter === 'all' || c.status === claimsFilter).length === 0 ? (
+                <div className="p-12 text-center text-slate-400 text-base">
+                  No facility claims found for the selected filter.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {facilityClaims
+                    .filter(c => claimsFilter === 'all' || c.status === claimsFilter)
+                    .map((claim) => (
+                      <div
+                        key={claim.id}
+                        className="p-5 sm:p-6 rounded-2xl border border-slate-200 bg-white hover:border-purple-300 transition-all shadow-xs space-y-4"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                          <div>
+                            <span className="text-xs font-bold text-purple-700 uppercase tracking-wider block">
+                              Facility Claim Request
+                            </span>
+                            <h3 className="text-lg font-bold text-slate-900">
+                              {claim.facilityName || 'Facility'}
+                            </h3>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 self-start sm:self-auto">
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                              claim.status === 'approved'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : claim.status === 'rejected'
+                                ? 'bg-rose-100 text-rose-800'
+                                : 'bg-amber-100 text-amber-800 animate-pulse'
+                            }`}>
+                              {claim.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Claimant Credentials Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                          <div>
+                            <span className="text-slate-400 font-semibold block">Claimant Name &amp; Title</span>
+                            <strong className="text-slate-800 text-sm block mt-0.5">{claim.claimantName}</strong>
+                            <span className="text-slate-600">{claim.designation}</span>
+                          </div>
+
+                          <div>
+                            <span className="text-slate-400 font-semibold block">Official Contact</span>
+                            <a href={`mailto:${claim.officialEmail}`} className="text-teal-700 font-semibold hover:underline block mt-0.5">
+                              {claim.officialEmail}
+                            </a>
+                            <span className="text-slate-600">{claim.officialPhone}</span>
+                          </div>
+
+                          <div>
+                            <span className="text-slate-400 font-semibold block">Proof Document</span>
+                            <strong className="text-slate-800 block mt-0.5">{claim.governmentIdType}</strong>
+                            {claim.idProofUrl && (
+                              <span className="text-slate-500 truncate block">Ref: {claim.idProofUrl}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {claim.additionalNotes && (
+                          <div className="p-3 rounded-xl bg-slate-50 text-xs text-slate-700 border border-slate-200">
+                            <strong>Administrative Request Notes:</strong> {claim.additionalNotes}
+                          </div>
+                        )}
+
+                        {claim.reviewNotes && (
+                          <div className="p-3 rounded-xl bg-purple-50 text-xs text-purple-900 border border-purple-200">
+                            <strong>Reviewer Notes:</strong> {claim.reviewNotes}
+                          </div>
+                        )}
+
+                        {/* Actions for Pending Claims */}
+                        {claim.status === 'pending' && (
+                          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                            <button
+                              type="button"
+                              disabled={claimActionLoading}
+                              onClick={() => handleRejectClaim(claim.id)}
+                              className="px-4 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              Reject Claim
+                            </button>
+                            <button
+                              type="button"
+                              disabled={claimActionLoading}
+                              onClick={() => handleApproveClaim(claim.id)}
+                              className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Approve as Facility Admin</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
+
             </div>
           )}
 

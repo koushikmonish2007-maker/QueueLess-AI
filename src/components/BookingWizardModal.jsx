@@ -11,13 +11,10 @@ import {
   MapPin, 
   Phone, 
   HeartHandshake, 
-  Sparkles,
   AlertCircle,
   Search,
   Check,
-  User,
-  ShieldCheck,
-  Calendar
+  User
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -31,7 +28,7 @@ export default function BookingWizardModal({
   initialFacility = null,
   onBookingSuccess 
 }) {
-  const { currentUser, isSupabaseConfigured } = useAuth();
+  const { currentUser } = useAuth();
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -87,19 +84,23 @@ export default function BookingWizardModal({
 
   if (!isOpen) return null;
 
-  // Filter facilities
-  const filteredFacilities = facilities.filter(fac => {
-    const matchesSearch = !searchQuery.trim() || 
-      fac.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (fac.district && fac.district.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (fac.location && fac.location.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesCategory = selectedCategory === 'All' || fac.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const categories = ['All', 'Hospitals', 'Government', 'Banks', 'Colleges', 'Service Centers'];
+  // Filter facilities — prioritize booking enabled centers
+  const filteredFacilities = facilities
+    .filter(fac => fac.isBookingEnabled !== false && fac.onboardingStatus === 'booking_enabled')
+    .filter(fac => {
+      const matchesSearch = !searchQuery.trim() || 
+        fac.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (fac.district && fac.district.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (fac.location && fac.location.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesCategory = selectedCategory === 'All' || fac.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
 
   const handleSelectFacility = (fac) => {
+    if (fac.isBookingEnabled === false || fac.onboardingStatus !== 'booking_enabled') {
+      setErrorBanner('Online token booking is only available for partnered facilities with active queue counters. This facility is currently an informational walk-in directory listing.');
+      return;
+    }
     setSelectedFacility(fac);
     setSelectedService(null);
     setErrorBanner('');

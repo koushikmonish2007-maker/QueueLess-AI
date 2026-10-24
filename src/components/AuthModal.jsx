@@ -196,6 +196,8 @@ export default function AuthModal({ isOpen, onClose }) {
               className="w-full py-2.5 rounded-xl font-bold text-xs text-white bg-brand-blue hover:bg-brand-blue-light transition-all shadow-glow-sm cursor-pointer disabled:opacity-50"
             >
               {loading ? 'Processing...' : isRegister ? 'Register Account' : 'Sign In'}
+            </button>
+
             <div className="text-center pt-2">
               <button
                 type="button"

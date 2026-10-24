@@ -2,6 +2,7 @@ import React from 'react';
 
 /**
  * StatusBadge component with subtle glow and clear state coloring.
+ * Supports token statuses, counter statuses, and facility onboarding statuses.
  * 
  * @param {{ status: string, size?: 'sm' | 'md' | 'lg', label?: string }} props
  */
@@ -9,6 +10,49 @@ export default function StatusBadge({ status, size = 'md', label }) {
   const normStatus = (status || '').toLowerCase().replace('-', '_');
 
   const config = {
+    // Facility Onboarding statuses
+    booking_enabled: {
+      text: label || 'Booking Enabled',
+      dot: 'bg-emerald-500 animate-pulse',
+      classes: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-semibold shadow-xs'
+    },
+    partnered: {
+      text: label || 'Partnered',
+      dot: 'bg-purple-500',
+      classes: 'bg-purple-50 text-purple-800 border-purple-300 font-semibold'
+    },
+    verified: {
+      text: label || 'Verified Directory',
+      dot: 'bg-blue-500',
+      classes: 'bg-blue-50 text-blue-800 border-blue-300 font-semibold'
+    },
+    listed: {
+      text: label || 'Public Registry',
+      dot: 'bg-slate-400',
+      classes: 'bg-slate-100 text-slate-700 border-slate-300 font-medium'
+    },
+    // Claim statuses
+    pending: {
+      text: label || 'Pending Review',
+      dot: 'bg-amber-500',
+      classes: 'bg-amber-50 text-amber-800 border-amber-300'
+    },
+    under_review: {
+      text: label || 'Under Review',
+      dot: 'bg-cyan-500 animate-pulse',
+      classes: 'bg-cyan-50 text-cyan-800 border-cyan-300 font-medium'
+    },
+    approved: {
+      text: label || 'Approved',
+      dot: 'bg-emerald-500',
+      classes: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-semibold'
+    },
+    rejected: {
+      text: label || 'Rejected',
+      dot: 'bg-rose-500',
+      classes: 'bg-rose-50 text-rose-800 border-rose-300'
+    },
+
     // Token statuses
     waiting: {
       text: label || 'Waiting in Queue',
@@ -45,6 +89,7 @@ export default function StatusBadge({ status, size = 'md', label }) {
       dot: 'bg-rose-500',
       classes: 'bg-rose-50 text-rose-800 border-rose-300'
     },
+
     // Counter statuses
     active: {
       text: label || 'Active & Ready',
